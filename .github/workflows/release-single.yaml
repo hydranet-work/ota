@@ -52,6 +52,9 @@ on:
       additional-env:
         description: Additional env var key value pairs, space separated, e.g. "A=1 B=2"
         default: ''
+permissions:
+  contents: write
+
 jobs:
   build-device:
     runs-on: ubuntu-latest
@@ -61,7 +64,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: schnatterer/rooted-graphene
-          ref: ${{ github.event.inputs.rooted-graphene-version || inputs.rooted-graphene-version || 'main' }} 
+          # Pinned instead of 'main': this checkout runs with our signing keys in scope,
+          # so the script revision is reviewed before it is allowed to change.
+          ref: ${{ github.event.inputs.rooted-graphene-version || inputs.rooted-graphene-version || 'a732173497df482b85f5f10021d6b30ba4a2a6df' }}
           fetch-depth: 1 # Efficent checkout, we only need the one ref
       - name: Checkout OTA repository for updating OTA server on GitHub Pages
         uses: actions/checkout@v4
@@ -97,6 +102,8 @@ jobs:
       - run: sudo apt-get install -y jq curl git
       - name: release
         env:
+          # Build from the alpha channel instead of the default stable-security-preview
+          OTA_CHANNEL: alpha
           PASSPHRASE_AVB: ${{ secrets.PASSPHRASE_AVB }}
           PASSPHRASE_OTA: ${{ secrets.PASSPHRASE_OTA }}
           KEY_AVB_BASE64: ${{ secrets.KEY_AVB_BASE64 }}
